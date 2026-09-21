@@ -6,6 +6,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    env:
+      GRADLE_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=1g -Dorg.gradle.daemon=false"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -14,15 +16,10 @@ jobs:
         run: |
           unzip -o Lwidget-dark.zip
           chmod -R u+rwX Lwidget-2.4
-          
-          # Xóa .github trong project gốc để tránh trùng
           rm -rf Lwidget-2.4/.github
-          
-          # Di chuyển toàn bộ file ra ngoài
           shopt -s dotglob
           mv Lwidget-2.4/* .
           rmdir Lwidget-2.4 || true
-          
           ls -la
           test -f gradlew && echo "✅ gradlew found" || echo "❌ gradlew NOT found"
 
@@ -46,7 +43,7 @@ jobs:
       - name: Build Release APK
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --stacktrace
+          ./gradlew assembleRelease --stacktrace --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
