@@ -12,21 +12,22 @@ jobs:
 
       - name: Unzip project
         run: |
-          unzip -q Lwidget-dark.zip
-          # Tìm thư mục chứa gradlew
-          if [ -f "Lwidget-2.4/gradlew" ]; then
-            mv Lwidget-2.4/* .
-            mv Lwidget-2.4/.* . 2>/dev/null || true
-            rmdir Lwidget-2.4 2>/dev/null || true
-          fi
+          unzip -o Lwidget-dark.zip -d project
+          cd project
+          # Tìm thư mục có gradlew
+          GRADLE_DIR=$(find . -name "gradlew" | head -1 | xargs dirname)
+          echo "Found project at: $GRADLE_DIR"
+          cp -r $GRADLE_DIR/* ../
+          cp -r $GRADLE_DIR/.[!.]* ../ 2>/dev/null || true
+          cd ..
           ls -la
+          chmod +x gradlew || true
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           java-version: '17'
           distribution: 'temurin'
-          cache: 'gradle'
 
       - name: Generate Keystore
         run: |
@@ -39,11 +40,10 @@ jobs:
           echo "keyAlias=lwidget" >> keystore.properties
           echo "storeFile=../my-release-key.jks" >> keystore.properties
 
-      - name: Make gradlew executable
-        run: chmod +x gradlew
-
       - name: Build Release APK
-        run: ./gradlew assembleRelease --stacktrace
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
