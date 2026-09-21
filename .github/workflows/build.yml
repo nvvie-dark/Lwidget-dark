@@ -13,14 +13,13 @@ jobs:
       - name: Unzip project
         run: |
           unzip -o Lwidget-dark.zip
-          # Di chuyển nội dung ra ngoài nếu bị lồng thư mục
-          if [ -d "Lwidget-2.4" ]; then
-            shopt -s dotglob
-            mv Lwidget-2.4/* .
-            rmdir Lwidget-2.4
-          fi
+          # Sửa quyền rồi mới di chuyển
+          chmod -R u+rwX Lwidget-2.4
+          shopt -s dotglob
+          mv Lwidget-2.4/* .
+          rmdir Lwidget-2.4 || true
           ls -la
-          test -f gradlew && echo "gradlew found" || echo "gradlew NOT found"
+          test -f gradlew && echo "✅ gradlew found" || echo "❌ gradlew NOT found"
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
