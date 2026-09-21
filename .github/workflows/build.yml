@@ -1,0 +1,53 @@
+name: Build Release APK
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Unzip project
+        run: |
+          unzip -q Lwidget-dark.zip
+          # Tìm thư mục chứa gradlew
+          if [ -f "Lwidget-2.4/gradlew" ]; then
+            mv Lwidget-2.4/* .
+            mv Lwidget-2.4/.* . 2>/dev/null || true
+            rmdir Lwidget-2.4 2>/dev/null || true
+          fi
+          ls -la
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
+
+      - name: Generate Keystore
+        run: |
+          keytool -genkeypair -v -storetype PKCS12 -keystore my-release-key.jks \
+            -alias lwidget -keyalg RSA -keysize 2048 -validity 10000 \
+            -storepass android -keypass android \
+            -dname "CN=Lwidget Mod, OU=Personal, O=User, L=City, ST=State, C=VN"
+          echo "storePassword=android" > keystore.properties
+          echo "keyPassword=android" >> keystore.properties
+          echo "keyAlias=lwidget" >> keystore.properties
+          echo "storeFile=../my-release-key.jks" >> keystore.properties
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease --stacktrace
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: Lwidget-mod-release
+          path: app/build/outputs/apk/release/*.apk
+          retention-days: 14
