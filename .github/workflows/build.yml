@@ -1,4 +1,4 @@
-name: Build Release APK
+name: Build Debug APK
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     env:
-      GRADLE_OPTS: "-Xmx4g -XX:MaxMetaspaceSize=1g -Dorg.gradle.daemon=false"
+      GRADLE_OPTS: "-Xmx3g -XX:MaxMetaspaceSize=512m -Dorg.gradle.daemon=false -Dorg.gradle.parallel=false"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -20,6 +20,9 @@ jobs:
           shopt -s dotglob
           mv Lwidget-2.4/* .
           rmdir Lwidget-2.4 || true
+          echo "org.gradle.jvmargs=-Xmx3g -XX:MaxMetaspaceSize=512m" >> gradle.properties
+          echo "org.gradle.parallel=false" >> gradle.properties
+          echo "org.gradle.daemon=false" >> gradle.properties
           ls -la
           test -f gradlew && echo "✅ gradlew found" || echo "❌ gradlew NOT found"
 
@@ -29,25 +32,7 @@ jobs:
           java-version: '17'
           distribution: 'temurin'
 
-      - name: Generate Keystore
-        run: |
-          keytool -genkeypair -v -storetype PKCS12 -keystore my-release-key.jks \
-            -alias lwidget -keyalg RSA -keysize 2048 -validity 10000 \
-            -storepass android -keypass android \
-            -dname "CN=Lwidget Mod, OU=Personal, O=User, L=City, ST=State, C=VN"
-          echo "storePassword=android" > keystore.properties
-          echo "keyPassword=android" >> keystore.properties
-          echo "keyAlias=lwidget" >> keystore.properties
-          echo "storeFile=../my-release-key.jks" >> keystore.properties
-
-      - name: Build Release APK
+      - name: Build Debug APK
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --stacktrace --no-daemon
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
-        with:
-          name: Lwidget-mod-release
-          path: app/build/outputs/apk/release/*.apk
-          retention-days: 14
+          ./gradlew assembleDebug --stacktrace --
